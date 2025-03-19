@@ -482,7 +482,8 @@
                 </div>
             </div>
             
-            <!-- Generated images will be shown here -->
+            <!-- 添加导出图片的容器 -->
+            <div id="exportedImagesContainer" class="mt-4 hidden"></div>
         </div>
 
         <!-- Instructions - New Styled Version -->
@@ -1021,14 +1022,13 @@
                     dropdown.appendChild(item);
                 });
                 
-                // 不自动显示下拉框，让用户点击下拉按钮时才显示
-                // dropdown.style.display = 'block';
+                // 在成功生成回复后重置按钮状态
+                resetButtonState();
                 
                 // 通知用户AI回复已生成
                 toggleDropdown.classList.add('animate-pulse');
                 setTimeout(() => {
                     toggleDropdown.classList.remove('animate-pulse');
-                    // 移除这里的重置状态调用，因为已经移到input事件中了
                 }, 2000);
                 
             } catch (error) {
@@ -1166,147 +1166,99 @@
         exportPositions.addEventListener('click', () => {
             // Show loading indicator
             const exportedImagesContainer = document.getElementById('exportedImagesContainer');
-            exportedImagesContainer.innerHTML = '<div class="text-center py-4"><div class="loading-spinner inline-block"></div><p class="mt-2">正在生成表情包...</p></div>';
+            exportedImagesContainer.innerHTML = '<div class="text-center py-4"><div class="loading-spinner inline-block"></div><p class="mt-2">正在生成第一张表情包...</p></div>';
             exportedImagesContainer.classList.remove('hidden');
+            
+            // Disable export button
+            exportPositions.disabled = true;
+            exportPositions.classList.add('opacity-50');
             
             // Use setTimeout to allow UI to update before heavy processing
             setTimeout(() => {
-                // 导出前准备 - 保存原始状态
-                const meme1OriginalStyle = {
-                    overflow: meme1Text.style.overflow,
-                    maxHeight: meme1Text.style.maxHeight,
-                    zIndex: meme1Text.style.zIndex
-                };
-                
-                const meme2OriginalStyle = {
-                    overflow: meme2Text.style.overflow,
-                    maxHeight: meme2Text.style.maxHeight,
-                    zIndex: meme2Text.style.zIndex
-                };
-                
-                // 临时修改样式以确保导出正确
-                meme1Text.style.overflow = 'visible';
-                meme1Text.style.maxHeight = 'none';
-                meme1Text.style.zIndex = '10';
-                
-                meme2Text.style.overflow = 'visible';
-                meme2Text.style.maxHeight = 'none';
-                meme2Text.style.zIndex = '10';
-                
-                // 临时隐藏复制按钮
-                const copyBtn1 = document.getElementById('copyMeme1');
-                const copyBtn2 = document.getElementById('copyMeme2');
-                const copyBtn1Display = copyBtn1.style.display;
-                const copyBtn2Display = copyBtn2.style.display;
-                copyBtn1.style.display = 'none';
-                copyBtn2.style.display = 'none';
-                
-                // Export both meme images using html2canvas
-                Promise.all([
-                    html2canvas(meme1Container, {
-                        allowTaint: true,
-                        useCORS: true,
-                        scale: 2,
-                        logging: false,
-                        onclone: function(clonedDoc) {
-                            // 确保克隆文档中的文本元素样式正确
-                            const clonedText = clonedDoc.getElementById('meme1Text');
-                            if (clonedText) {
-                                clonedText.style.opacity = '1';
-                                clonedText.style.visibility = 'visible';
-                                clonedText.style.overflow = 'visible';
-                                clonedText.style.maxHeight = 'none';
-                                
-                                // 解析当前transform值并调整位置
-                                const currentTransform = clonedText.style.transform;
-                                if (currentTransform && currentTransform.includes('translate')) {
-                                    // 调整Y轴方向偏移，减少10%的下移量
-                                    clonedText.style.transform = currentTransform.replace(
-                                        /translate\(-50%, -50%\)/,
-                                        'translate(-50%, -60%)'
-                                    );
-                                }
+                // 导出第一张图片
+                html2canvas(meme1Container, {
+                    allowTaint: true,
+                    useCORS: true,
+                    scale: 2,
+                    logging: false,
+                    onclone: function(clonedDoc) {
+                        const clonedText = clonedDoc.getElementById('meme1Text');
+                        if (clonedText) {
+                            clonedText.style.opacity = '1';
+                            clonedText.style.visibility = 'visible';
+                            clonedText.style.overflow = 'visible';
+                            clonedText.style.maxHeight = 'none';
+                            
+                            const currentTransform = clonedText.style.transform;
+                            if (currentTransform && currentTransform.includes('translate')) {
+                                clonedText.style.transform = currentTransform.replace(
+                                    /translate\(-50%, -50%\)/,
+                                    'translate(-50%, -60%)'
+                                );
                             }
                         }
-                    }),
-                    html2canvas(meme2Container, {
-                        allowTaint: true,
-                        useCORS: true,
-                        scale: 2,
-                        logging: false,
-                        onclone: function(clonedDoc) {
-                            // 确保克隆文档中的文本元素样式正确
-                            const clonedText = clonedDoc.getElementById('meme2Text');
-                            if (clonedText) {
-                                clonedText.style.opacity = '1';
-                                clonedText.style.visibility = 'visible';
-                                clonedText.style.overflow = 'visible';
-                                clonedText.style.maxHeight = 'none';
-                                
-                                // 解析当前transform值并调整位置
-                                const currentTransform = clonedText.style.transform;
-                                if (currentTransform && currentTransform.includes('translate')) {
-                                    // 调整Y轴方向偏移，减少10%的下移量
-                                    clonedText.style.transform = currentTransform.replace(
-                                        /translate\(-50%, -50%\)/,
-                                        'translate(-50%, -60%)'
-                                    );
-                                }
-                            }
-                        }
-                    })
-                ]).then(([canvas1, canvas2]) => {
-                    // 恢复原始样式
-                    meme1Text.style.overflow = meme1OriginalStyle.overflow;
-                    meme1Text.style.maxHeight = meme1OriginalStyle.maxHeight;
-                    meme1Text.style.zIndex = meme1OriginalStyle.zIndex;
-                    
-                    meme2Text.style.overflow = meme2OriginalStyle.overflow;
-                    meme2Text.style.maxHeight = meme2OriginalStyle.maxHeight;
-                    meme2Text.style.zIndex = meme2OriginalStyle.zIndex;
-                    
-                    // 恢复复制按钮
-                    copyBtn1.style.display = copyBtn1Display;
-                    copyBtn2.style.display = copyBtn2Display;
-                    
-                    // 自动下载图片1
+                    }
+                }).then(canvas1 => {
+                    // 下载第一张图片
                     downloadCanvas(canvas1, '表情包1.png');
                     
-                    // 短暂延迟后下载图片2，避免浏览器阻止多次下载
+                    // 更新状态提示
+                    exportedImagesContainer.innerHTML = '<div class="text-center py-4"><p class="text-green-500 mb-2"><i class="fas fa-check-circle"></i> 第一张表情包已下载</p><div class="loading-spinner inline-block"></div><p class="mt-2">正在生成第二张表情包...</p></div>';
+                    
+                    // 延迟2秒后生成第二张图片
                     setTimeout(() => {
-                        downloadCanvas(canvas2, '表情包2.png');
-                        
-                        // 更新提示信息
-                        exportedImagesContainer.innerHTML = '<p class="text-center text-green-500">表情包已成功下载！</p>';
-                        
-                        // 3秒后隐藏提示
-                        setTimeout(() => {
-                            exportedImagesContainer.classList.add('hidden');
-                        }, 3000);
-                    }, 500);
+                        html2canvas(meme2Container, {
+                            allowTaint: true,
+                            useCORS: true,
+                            scale: 2,
+                            logging: false,
+                            onclone: function(clonedDoc) {
+                                const clonedText = clonedDoc.getElementById('meme2Text');
+                                if (clonedText) {
+                                    clonedText.style.opacity = '1';
+                                    clonedText.style.visibility = 'visible';
+                                    clonedText.style.overflow = 'visible';
+                                    clonedText.style.maxHeight = 'none';
+                                    
+                                    const currentTransform = clonedText.style.transform;
+                                    if (currentTransform && currentTransform.includes('translate')) {
+                                        clonedText.style.transform = currentTransform.replace(
+                                            /translate\(-50%, -50%\)/,
+                                            'translate(-50%, -60%)'
+                                        );
+                                    }
+                                }
+                            }
+                        }).then(canvas2 => {
+                            // 下载第二张图片
+                            downloadCanvas(canvas2, '表情包2.png');
+                            
+                            // 更新成功提示
+                            exportedImagesContainer.innerHTML = '<div class="text-center py-4"><p class="text-green-500"><i class="fas fa-check-circle"></i> 两张表情包已全部下载完成！</p></div>';
+                            
+                            // 启用导出按钮
+                            exportPositions.disabled = false;
+                            exportPositions.classList.remove('opacity-50');
+                            
+                            // 3秒后隐藏提示
+                            setTimeout(() => {
+                                exportedImagesContainer.classList.add('hidden');
+                            }, 3000);
+                        });
+                    }, 2000); // 延迟2秒生成第二张图片
                 }).catch(error => {
                     console.error('导出图片时出错:', error);
-                    exportedImagesContainer.innerHTML = '<p class="text-center text-red-500">导出图片时出错，请重试</p>';
+                    exportedImagesContainer.innerHTML = '<div class="text-center py-4"><p class="text-red-500"><i class="fas fa-exclamation-circle"></i> 导出图片时出错，请重试</p></div>';
                     
-                    // 恢复原始样式
-                    meme1Text.style.overflow = meme1OriginalStyle.overflow;
-                    meme1Text.style.maxHeight = meme1OriginalStyle.maxHeight;
-                    meme1Text.style.zIndex = meme1OriginalStyle.zIndex;
-                    
-                    meme2Text.style.overflow = meme2OriginalStyle.overflow;
-                    meme2Text.style.maxHeight = meme2OriginalStyle.maxHeight;
-                    meme2Text.style.zIndex = meme2OriginalStyle.zIndex;
-                    
-                    // 恢复复制按钮
-                    copyBtn1.style.display = copyBtn1Display;
-                    copyBtn2.style.display = copyBtn2Display;
+                    // 启用导出按钮
+                    exportPositions.disabled = false;
+                    exportPositions.classList.remove('opacity-50');
                 });
             }, 100);
         });
         
         // 辅助函数：下载Canvas为图片
         function downloadCanvas(canvas, filename) {
-            // 创建下载链接
             const link = document.createElement('a');
             link.download = filename;
             link.href = canvas.toDataURL('image/png');
@@ -1873,16 +1825,26 @@
             // 如果有已保存的密钥，填充到输入框
             apiKeyInput.value = localStorage.getItem('deepseekApiKey') || '';
             
-            // 切换密钥可见性
-            toggleApiKeyVisibility.addEventListener('click', () => {
-                const type = apiKeyInput.type;
-                apiKeyInput.type = type === 'password' ? 'text' : 'password';
-                toggleApiKeyVisibility.innerHTML = `<i class="fas fa-eye${type === 'password' ? '' : '-slash'}"></i>`;
+            // 清除之前可能存在的事件监听器
+            const newToggleVisibility = toggleApiKeyVisibility.cloneNode(true);
+            toggleApiKeyVisibility.parentNode.replaceChild(newToggleVisibility, toggleApiKeyVisibility);
+            
+            // 添加新的可见性切换事件
+            newToggleVisibility.addEventListener('click', () => {
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    newToggleVisibility.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                } else {
+                    apiKeyInput.type = 'password';
+                    newToggleVisibility.innerHTML = '<i class="fas fa-eye"></i>';
+                }
             });
             
             // 关闭模态框的函数
             const closeModal = () => {
                 apiKeyModal.style.display = 'none';
+                // 清除所有临时事件监听器
+                document.removeEventListener('keydown', handleEscKey);
             };
             
             // 处理ESC键关闭
@@ -1895,14 +1857,19 @@
             // 添加ESC键监听
             document.addEventListener('keydown', handleEscKey);
             
-            // 点击关闭按钮
-            closeApiModal.addEventListener('click', closeModal);
+            // 清除之前的点击事件并重新添加
+            const newCloseBtn = closeApiModal.cloneNode(true);
+            closeApiModal.parentNode.replaceChild(newCloseBtn, closeApiModal);
+            newCloseBtn.addEventListener('click', closeModal);
             
-            // 点击取消按钮
-            cancelApiKey.addEventListener('click', closeModal);
+            const newCancelBtn = cancelApiKey.cloneNode(true);
+            cancelApiKey.parentNode.replaceChild(newCancelBtn, cancelApiKey);
+            newCancelBtn.addEventListener('click', closeModal);
             
-            // 点击保存按钮
-            saveApiKey.addEventListener('click', () => {
+            // 保存按钮处理
+            const newSaveBtn = saveApiKey.cloneNode(true);
+            saveApiKey.parentNode.replaceChild(newSaveBtn, saveApiKey);
+            newSaveBtn.addEventListener('click', () => {
                 const newKey = apiKeyInput.value.trim();
                 deepseekApiKey = newKey;
                 localStorage.setItem('deepseekApiKey', newKey);
@@ -1923,11 +1890,13 @@
             });
             
             // 点击模态框外部关闭
-            apiKeyModal.addEventListener('click', (e) => {
+            const modalClickHandler = (e) => {
                 if (e.target === apiKeyModal) {
                     closeModal();
+                    apiKeyModal.removeEventListener('click', modalClickHandler);
                 }
-            });
+            };
+            apiKeyModal.addEventListener('click', modalClickHandler);
         });
 
         // 添加下拉按钮点击事件
@@ -1990,6 +1959,10 @@
                         <i class="fas fa-info-circle mr-2"></i>
                         请输入您的 DeepSeek API 密钥以启用AI神回复功能
                     </p>
+                    <a href="https://platform.deepseek.com/" target="_blank" class="inline-flex items-center mt-2 text-sm text-pink-600 hover:text-pink-800">
+                        <i class="fas fa-external-link-alt mr-1"></i>
+                        前往DeepSeek官网获取API密钥
+                    </a>
                 </div>
                 
                 <div class="flex justify-end space-x-3 mt-6">
