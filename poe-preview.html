@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神回复表情包生成器</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #FF9FBF;
+            --primary-dark: #E57FAB;
+            --secondary-color: #A9DCAD;
+            --secondary-dark: #7BC77F;
+            --text-color: #333333;
+            --bg-color: #FFF7F9;
+            --card-bg: #FFFFFF;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Noto Serif SC', serif;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-dark);
+        }
+
+        .meme-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            user-select: none;
+            margin-bottom: 45px;
+        }
+
+        .meme-image {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+        }
+
+        .meme-text {
+            position: absolute;
+            color: #4B3621;
+            font-weight: 700;
+            text-align: center;
+            transform-origin: center center;
+            line-height: 1.3;
+            width: 100%;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+            hyphens: auto;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            overflow: visible;
+            max-height: none;
+        }
+        
+        /* When text is using custom rotation, ensure proper orientation */
+        .text-custom-rotation {
+            writing-mode: horizontal-tb;
+            text-orientation: mixed;
+        }
+
+        /* First meme text positioning and styling */
+        .meme1-text {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            width: 45%;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Second meme text positioning and styling */
+        .meme2-text {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(0deg);
+            width: 45%;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        /* Text area customization mode */
+        .text-area-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #FF9FBF;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            cursor: move;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .text-area-line {
+            position: absolute;
+            background-color: rgba(255, 159, 191, 0.7);
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .area-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            z-index: 4;
+            border-radius: 12px;
+        }
+        
+        .customize-mode {
+            cursor: crosshair;
+            border: 2px solid #FF9FBF;
+            border-radius: 12px;
+        }
+        
+        .finish-btn {
+            position: absolute;
+            bottom: -40px;
+            right: 10px;
+            background-color: #FF9FBF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            z-index: 20;
+            cursor: pointer;
+        }
+        
+        .cancel-btn {
+            position: absolute;
+            bottom: -40px;
+            right: 58px;
+            background-color: #f8f8f8;
+            color: #333;
+            box-shadow: inset 0 0 0 1px #ddd;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            z-index: 20;
+            cursor: pointer;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 0.2rem solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .char-counter {
+            transition: color 0.3s;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            transition: transform 0.5s;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(45deg);
+        }
+
+        .copy-btn {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            z-index: 20;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .copy-btn i {
+            font-size: 10px;
+        }
+
+        /* 添加圆形列表样式 */
+        .list-circle {
+            list-style-type: circle;
+        }
+        
+        /* AI回复下拉框样式 */
+        .ai-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+        
+        .ai-dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .ai-dropdown-item:hover {
+            background-color: #FFF7F9;
+        }
+        
+        .ai-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .ai-dropdown-header {
+            padding: 8px 12px;
+            font-weight: 500;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        /* 下拉按钮样式 */
+        .dropdown-toggle {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            padding: 0;
+            transition: color 0.2s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 2;
+        }
+        
+        .dropdown-toggle:hover {
+            color: var(--primary-color);
+        }
+        
+        .dropdown-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        
+        /* 下拉按钮闪烁动画 */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 159, 191, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 159, 191, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 159, 191, 0); }
+        }
+        
+        .animate-pulse {
+            animation: pulse 1s infinite;
+            background-color: rgba(255, 159, 191, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 mb-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl sm:text-3xl font-bold text-center flex items-center">
+                <i class="fas fa-mug-hot mr-2 text-pink-500"></i>
+                神回复表情包生成器
+            </h1>
+            <div class="flex items-center">
+                <span class="text-sm text-gray-600 italic bg-pink-50 px-3 py-1 rounded-full border border-pink-200 shadow-sm">
+                    <i class="fas fa-code mr-1 text-pink-400"></i>制作 by王老禅头
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- First Meme -->
+            <div class="card rounded-xl p-5">
+                <h2 class="text-xl font-bold mb-4 text-center">书封面表情包</h2>
+                
+                <div id="meme1Container" class="meme-container mb-4">
+                    <img src="https://pfst.cf2.poecdn.net/base/image/f6167024e5837f82dce46752868bb2c3e5bc760160fbc01cd69a85eca056d787?w=1080&h=1083" alt="Book Cover Meme" class="meme-image">
+                    <div id="meme1Text" class="meme-text meme1-text">男朋友
+不听话怎么办</div>
+                    <button id="copyMeme1" class="copy-btn">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="meme1Input" class="text-sm font-medium">书名文字</label>
+                        <div class="text-xs text-gray-500">
+                            <span id="meme1Counter" class="char-counter">15</span>/20
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="meme1Input"
+                            class="w-full px-4 py-2 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                            placeholder="例如：男朋友 不听话怎么办"
+                            value="男朋友 不听话怎么办"
+                            maxlength="20"
+                        >
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="flex space-x-2">
+                        <button id="customizeMeme1Area" class="px-3 py-2 rounded-lg bg-pink-100 text-pink-700 hover:bg-pink-200 transition duration-200 w-full">
+                            <i class="fas fa-crop-alt mr-1"></i>自定义区域
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Meme -->
+            <div class="card rounded-xl p-5">
+                <h2 class="text-xl font-bold mb-4 text-center">书内页表情包</h2>
+                
+                <div id="meme2Container" class="meme-container mb-4">
+                    <img src="https://pfst.cf2.poecdn.net/base/image/62d65bafa689ba938583536ff83900a77239fbc8972ee783c5ca2fb5681b79db?w=1080&h=1081" alt="Book Page Meme" class="meme-image">
+                    <div id="meme2Text" class="meme-text meme2-text">换个
+男朋友</div>
+                    <button id="copyMeme2" class="copy-btn">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="meme2Input" class="text-sm font-medium">回应文字</label>
+                        <div class="text-xs text-gray-500">
+                            <span id="meme2Counter" class="char-counter">5</span>/20
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="meme2Input"
+                            class="w-full px-4 py-2 pr-12 rounded-lg border text-base focus:outline-none focus:ring-2 focus:ring-pink-500 bg-white"
+                            placeholder="例如：换个 男朋友"
+                            value="换个 男朋友"
+                            maxlength="20"
+                        >
+                        <button id="toggleDropdown" class="dropdown-toggle absolute right-2 top-1/2 transform -translate-y-1/2" aria-label="显示更多回复选项">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <!-- 添加AI回复下拉框 -->
+                        <div id="aiResponsesDropdown" class="ai-dropdown">
+                            <div class="ai-dropdown-header">选择一个神回复</div>
+                            <!-- AI回复选项将动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <div class="flex w-full space-x-2">
+                        <button id="customizeMeme2Area" class="px-3 py-2 rounded-lg bg-pink-100 text-pink-700 hover:bg-pink-200 transition duration-200">
+                            <i class="fas fa-crop-alt mr-1"></i>自定义区域
+                        </button>
+                        <button id="getAIResponse" class="px-3 py-2 rounded-lg btn-secondary text-gray-800 ml-2">
+                            <i class="fas fa-robot mr-1"></i><span id="aiButtonText">DeepSeek神回复</span>
+                            <span id="aiLoadingSpinner" class="loading-spinner hidden"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Combined control panel for color, reset and export -->
+        <div class="card rounded-xl p-5 mt-8">
+            <div class="flex items-center justify-between flex-nowrap gap-2 overflow-x-auto">
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-medium whitespace-nowrap">文字颜色：</span>
+                    <input type="color" id="commonTextColor" value="#4B3621" class="w-8 h-8 rounded cursor-pointer">
+                </div>
+                
+                <!-- 添加模型切换器 -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-medium whitespace-nowrap">DeepSeek模型：</span>
+                    <div class="relative inline-block">
+                        <select id="modelSelector" class="appearance-none bg-white border border-gray-300 rounded-lg py-1 px-2 pr-6 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                            <option value="deepseek-chat">DeepSeek V3</option>
+                            <option value="deepseek-reasoner">DeepSeek R1 (推理)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-700">
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-1 shrink-0">
+                    <button id="resetAllMemes" class="px-2 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 transition duration-200 text-sm">
+                        <i class="fas fa-undo mr-1"></i>重置全部
+                    </button>
+                    
+                    <button id="exportPositions" class="px-2 py-1 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition duration-200 text-sm">
+                        <i class="fas fa-download mr-1"></i>导出全部图片
+                    </button>
+                    
+                    <button id="configureApiKey" class="px-2 py-1 rounded-lg bg-purple-500 hover:bg-purple-600 text-white transition duration-200 text-sm">
+                        <i class="fas fa-key mr-1"></i>设置API密钥
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Generated images will be shown here -->
+        </div>
+
+        <!-- Instructions - New Styled Version -->
+        <div class="card rounded-xl p-5 mt-8">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-book-open text-pink-500 text-xl mr-3"></i>
+                <h3 class="text-xl font-bold">使用说明</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Left Column -->
+                <div class="space-y-4">
+                    <!-- Basic Operation -->
+                    <div class="bg-gradient-to-br from-pink-50 to-white rounded-lg p-3 transition-all duration-300 hover:shadow-md">
+                        <div class="flex items-center mb-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center mr-2">
+                                <i class="fas fa-edit text-pink-500"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">基本操作</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-gray-700 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>左侧输入问题文案，右侧输入回应文案</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>输入框中使用空格将文字分行显示</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>每个文案最多支持20个字符</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- AI Response -->
+                    <div class="bg-gradient-to-br from-pink-50 to-white rounded-lg p-3 transition-all duration-300 hover:shadow-md">
+                        <div class="flex items-center mb-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center mr-2">
+                                <i class="fas fa-robot text-pink-500"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">AI神回复功能</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-gray-700 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击"DeepSeek神回复"按钮，AI自动生成多个有趣回复</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击右侧下拉箭头查看更多AI生成的回复选项</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>可选择V3（普通）或R1（推理）两种AI模型</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Text Adjustment -->
+                    <div class="bg-gradient-to-br from-pink-50 to-white rounded-lg p-3 transition-all duration-300 hover:shadow-md">
+                        <div class="flex items-center mb-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center mr-2">
+                                <i class="fas fa-font text-pink-500"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">文字调整</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-gray-700 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>"自定义区域"可调整文字位置、角度和大小</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击4个点确定文字区域，上方2点决定文字方向</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>使用颜色选择器更改文字颜色</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="space-y-4">
+                    <!-- Save and Share -->
+                    <div class="bg-gradient-to-br from-pink-50 to-white rounded-lg p-3 transition-all duration-300 hover:shadow-md">
+                        <div class="flex items-center mb-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center mr-2">
+                                <i class="fas fa-share-alt text-pink-500"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">保存分享</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-gray-700 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击"复制"将单个表情包复制到剪贴板</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击"导出全部图片"同时下载两个表情包</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Other Functions -->
+                    <div class="bg-gradient-to-br from-pink-50 to-white rounded-lg p-3 transition-all duration-300 hover:shadow-md">
+                        <div class="flex items-center mb-2">
+                            <div class="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center mr-2">
+                                <i class="fas fa-cog text-pink-500"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800">其他功能</h4>
+                        </div>
+                        <ul class="space-y-1.5 text-gray-700 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>首次使用需要设置DeepSeek API密钥</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>点击"重置全部"可恢复默认状态</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-pink-400 mt-1 mr-2"></i>
+                                <span>所有设置和API密钥会自动保存在浏览器中</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 添加API密钥存储功能
+        let deepseekApiKey = localStorage.getItem('deepseekApiKey') || '';
+        
+        // 添加模型选择保存功能
+        let selectedModel = localStorage.getItem('selectedDeepseekModel') || 'deepseek-chat';
+        const modelSelector = document.getElementById('modelSelector');
+        modelSelector.value = selectedModel;
+        
+        // 保存用户模型选择
+        modelSelector.addEventListener('change', function() {
+            selectedModel = this.value;
+            localStorage.setItem('selectedDeepseekModel', selectedModel);
+            
+            // 更新按钮文本
+            if (selectedModel === 'deepseek-reasoner') {
+                aiButtonText.innerHTML = 'DeepSeek R1神回复';
+            } else {
+                aiButtonText.innerHTML = 'DeepSeek V3神回复';
+            }
+        });
+        
+        // 初始设置按钮文本
+        if (selectedModel === 'deepseek-reasoner') {
+            document.getElementById('aiButtonText').innerHTML = 'DeepSeek R1神回复';
+        }
+        
+        // Meme 1 functionality
+        const meme1Input = document.getElementById('meme1Input');
+        const meme1Text = document.getElementById('meme1Text');
+        const meme1Counter = document.getElementById('meme1Counter');
+        const meme1Size = document.getElementById('meme1Size');
+        const meme1Container = document.getElementById('meme1Container');
+        const customizeMeme1Area = document.getElementById('customizeMeme1Area');
+
+        // Meme 2 functionality
+        const meme2Input = document.getElementById('meme2Input');
+        const meme2Text = document.getElementById('meme2Text');
+        const meme2Counter = document.getElementById('meme2Counter');
+        const meme2Size = document.getElementById('meme2Size');
+        const meme2Container = document.getElementById('meme2Container');
+        const customizeMeme2Area = document.getElementById('customizeMeme2Area');
+        const getAIResponse = document.getElementById('getAIResponse');
+        const aiButtonText = document.getElementById('aiButtonText');
+        const aiLoadingSpinner = document.getElementById('aiLoadingSpinner');
+        const toggleDropdown = document.getElementById('toggleDropdown');
+
+        // Common color control for both memes
+        const commonTextColor = document.getElementById('commonTextColor');
+        
+        // Export functionality
+        const exportPositions = document.getElementById('exportPositions');
+        
+        // Area customization system variables
+        let currentCustomizing = null;
+        let customizingElement = null;
+        let currentMarkers = [];
+        let currentLines = [];
+        let customAreaActive = false;
+        
+        // Store last positions for each meme
+        let lastMeme1Positions = [
+            { x: 108.5, y: 192 },
+            { x: 230.5, y: 170 },
+            { x: 230.5, y: 295 },
+            { x: 110.5, y: 294 }
+        ];
+        
+        let lastMeme2Positions = [
+            { x: 0, y: 106 },
+            { x: 129.5, y: 90 },
+            { x: 161.5, y: 215 },
+            { x: 3.5, y: 242 }
+        ];
+
+        // Function to apply position data to text element
+        function applyPositionData(textElement, positions, containerElement) {
+            if (!positions || positions.length !== 4) return;
+            
+            // Calculate center of the four points
+            let centerX = 0, centerY = 0;
+            positions.forEach(pos => {
+                centerX += pos.x;
+                centerY += pos.y;
+            });
+            centerX /= 4;
+            centerY /= 4;
+            
+            // Calculate width and angle using the first two points
+            const dx = positions[1].x - positions[0].x;
+            const dy = positions[1].y - positions[0].y;
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Calculate the line length between first two points
+            const lineLength = Math.sqrt(dx * dx + dy * dy);
+            
+            // Get container dimensions
+            const containerWidth = containerElement.clientWidth;
+            const containerHeight = containerElement.clientHeight;
+            
+            // Calculate relative positions (as percentages)
+            const relCenterX = (centerX / containerWidth) * 100;
+            const relCenterY = (centerY / containerHeight) * 100;
+            const relWidth = (lineLength / containerWidth) * 100;
+            
+            // Apply the positioning
+            textElement.style.top = `${relCenterY}%`;
+            textElement.style.left = `${relCenterX}%`;
+            textElement.style.width = `${relWidth}%`;
+            textElement.style.transformOrigin = 'center center';
+            textElement.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+            textElement.classList.add('text-custom-rotation');
+            
+            // 获取文本内容和行数
+            const text = textElement.textContent;
+            const lines = text.split('\n');
+            const maxLineLength = Math.max(...lines.map(line => line.length));
+            
+            // 计算每个字符的理想宽度（考虑到中文字符）
+            const charWidth = lineLength / Math.max(1, maxLineLength);
+            
+            // 计算字体大小
+            const fontSize = Math.max(12, Math.min(24, charWidth * 0.9));
+            textElement.style.fontSize = `${fontSize}px`;
+            textElement.style.lineHeight = '1.3';
+            
+            // 处理文字溢出
+            textElement.style.overflow = 'hidden';
+            textElement.style.textOverflow = 'ellipsis';
+            textElement.style.maxHeight = `${lineLength * 1.5}px`;
+        }
+
+        // Initialize text positions
+        window.addEventListener('load', () => {
+            // Apply initial positions after a short delay to ensure images are loaded
+            setTimeout(() => {
+                applyPositionData(meme1Text, lastMeme1Positions, meme1Container);
+                applyPositionData(meme2Text, lastMeme2Positions, meme2Container);
+                // 调整字体大小
+                adjustFontSize(meme1Text, meme1Input.value, 'meme1', true);
+                adjustFontSize(meme2Text, meme2Input.value, 'meme2', true);
+                // 显示文字
+                meme1Text.style.opacity = '1';
+                meme2Text.style.opacity = '1';
+            }, 500);
+        });
+
+        // Update Meme 1 text and counter
+        meme1Input.addEventListener('input', () => {
+            const text = meme1Input.value;
+            const formattedText = text.split(' ').join('\n');
+            meme1Text.textContent = formattedText;
+            meme1Counter.textContent = text.length;
+            
+            // Adjust font size based on text length but skip auto line breaks
+            adjustFontSize(meme1Text, text, 'meme1', true);
+        });
+
+        // Update Meme 2 text and counter
+        meme2Input.addEventListener('input', () => {
+            const text = meme2Input.value;
+            const formattedText = text.split(' ').join('\n');
+            meme2Text.textContent = formattedText;
+            meme2Counter.textContent = text.length;
+            
+            // Adjust font size based on text length but skip auto line breaks
+            adjustFontSize(meme2Text, text, 'meme2', true);
+
+            // 重置AI按钮状态
+            resetButtonState();
+        });
+
+        // Function to reset meme 1
+        function resetMeme1Content() {
+            meme1Input.value = '男朋友 不听话怎么办';
+            const formattedText = meme1Input.value.split(' ').join('\n');
+            meme1Text.textContent = formattedText;
+            meme1Counter.textContent = '15';
+            
+            // Apply default position
+            applyPositionData(meme1Text, lastMeme1Positions, meme1Container);
+            
+            updateTextColors();
+        }
+
+        // Function to reset meme 2
+        function resetMeme2Content() {
+            meme2Input.value = '换个 男朋友';
+            const formattedText = meme2Input.value.split(' ').join('\n');
+            meme2Text.textContent = formattedText;
+            meme2Counter.textContent = '5';
+            
+            // Apply default position
+            applyPositionData(meme2Text, lastMeme2Positions, meme2Container);
+            
+            updateTextColors();
+        }
+        
+        // Add hint below input fields about space usage
+        const meme1Label = document.querySelector('label[for="meme1Input"]');
+        const meme2Label = document.querySelector('label[for="meme2Input"]');
+        
+        const createHint = () => {
+            const hint = document.createElement('span');
+            hint.className = 'text-xs text-gray-500 ml-2';
+            hint.textContent = '(输入空格可换行)';
+            return hint;
+        };
+        
+        meme1Label.appendChild(createHint());
+        meme2Label.appendChild(createHint());
+        
+        // Reset All Memes
+        const resetAllMemes = document.getElementById('resetAllMemes');
+        resetAllMemes.addEventListener('click', () => {
+            // 直接刷新页面
+            location.reload();
+        });
+
+        // Update both meme colors when common color picker changes
+        commonTextColor.addEventListener('input', updateTextColors);
+        
+        function updateTextColors() {
+            meme1Text.style.color = commonTextColor.value;
+            meme2Text.style.color = commonTextColor.value;
+        }
+
+        // Since size selectors are removed, we don't need these event listeners
+
+        // Get AI response
+        getAIResponse.addEventListener('click', async () => {
+            const inputText = meme1Input.value;
+            if (!inputText) {
+                alert('请先在第一个表情包中输入文字');
+                return;
+            }
+
+            // 清空输入框并显示加载提示
+            meme2Input.value = "请稍等 正在加载";
+            meme2Text.textContent = "请稍等 正在加载";
+            meme2Counter.textContent = "请稍等 正在加载".length;
+
+            // 显示加载状态
+            aiButtonText.style.display = 'none';
+            aiLoadingSpinner.style.display = 'inline-block';
+            aiLoadingSpinner.classList.remove('hidden');
+            getAIResponse.disabled = true;
+
+            // 使用setTimeout确保状态最终会被重置
+            const resetTimeout = setTimeout(() => {
+                // 强制重置按钮状态，防止永久卡住
+                resetButtonState();
+            }, 15000); // 15秒超时保护
+
+            try {
+                // 检查是否有已保存的API密钥，如果没有则提示用户输入
+                let apiKey = deepseekApiKey;
+                if (!apiKey) {
+                    apiKey = window.prompt('请输入您的DeepSeek API密钥');
+                    if (!apiKey) {
+                        throw new Error('未提供API密钥');
+                    }
+                    
+                    // 询问是否保存密钥
+                    if (confirm('是否保存此API密钥供下次使用？')) {
+                        deepseekApiKey = apiKey;
+                        localStorage.setItem('deepseekApiKey', deepseekApiKey);
+                    }
+                }
+                
+                const apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+                
+                // 获取当前选择的模型
+                const currentModel = modelSelector.value;
+                
+                // 根据不同模型使用不同的提示词
+                let systemPrompt = '你是一个擅长制造反转和阴阳怪气效果的表情包生成助手。你的回复总是出人意料，充满戏剧性的转折或者暗含讽刺。';
+                let userPrompt = `针对"${inputText}"这个问题，请给出10个出人意料的神回复，要么有戏剧性的反转，要么带着阴阳怪气的效果。每个回答必须非常简短（20字以内），直接给出回应，不要解释。请以JSON数组格式返回，格式为["回复1", "回复2", ...]。参考例子："男朋友不听话怎么办？-换个男朋友"，"怎么哄生气的男朋友？-别哄他不配。`;
+                
+                // 如果是R1模型，增强理性解释
+                if (currentModel === 'deepseek-reasoner') {
+                    systemPrompt = '你是一个擅长制造反转和阴阳怪气效果的表情包生成助手。你需要思考什么回复最有反差感，最出人意料。进行缜密思考后给出答案。';
+                    userPrompt = `针对"${inputText}"这个问题，请通过推理分析，给出20个最有反转效果的神回复。你的思考过程应该考虑：
+1. 文字原意与反义
+2. 幽默与讽刺效果
+3. 突然转折的惊喜感
+
+每个回复必须简短（20字以内），富有戏剧性。认真思考并以JSON数组格式返回，格式为["回复1", "回复2", ...]。参考例子："男朋友不听话怎么办？-换个男朋友"，"怎么哄生气的男朋友？-别哄他不配"`;
+                }
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: currentModel, // 使用选择的模型
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt
+                            },
+                            {
+                                role: 'user',
+                                content: userPrompt
+                            }
+                        ],
+                        max_tokens: 800, // 增加R1模型的输出长度，以包含推理过程
+                        temperature: 0.9
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text().catch(() => '无法获取错误详情');
+                    throw new Error(`API请求失败: HTTP ${response.status} - ${errorText}`);
+                }
+                
+                const data = await response.json();
+                if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('API返回格式异常');
+                }
+                
+                let aiResponse = data.choices[0].message.content;
+                
+                // 尝试从返回内容中解析JSON数组
+                let responses = [];
+                try {
+                    // 查找JSON数组开始和结束的位置
+                    const startIndex = aiResponse.indexOf('[');
+                    const endIndex = aiResponse.lastIndexOf(']') + 1;
+                    
+                    if (startIndex !== -1 && endIndex !== -1) {
+                        const jsonStr = aiResponse.substring(startIndex, endIndex);
+                        responses = JSON.parse(jsonStr);
+                    } else {
+                        // 如果没有找到JSON数组，尝试按行拆分
+                        responses = aiResponse.split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line && !line.startsWith('[') && !line.startsWith(']'))
+                            .map(line => {
+                                // 清理引号、序号等字符
+                                return line.replace(/^[0-9]+[\.、\-\s"]*|[""]$/g, '').trim();
+                            });
+                    }
+                } catch (error) {
+                    console.error("解析AI回复失败:", error);
+                    // 如果解析失败，尝试直接使用第一行作为回复
+                    responses = [aiResponse.split('\n')[0].replace(/["""]/g, '').trim()];
+                }
+                
+                // 确保至少有一个回复
+                if (responses.length === 0) {
+                    responses = ["AI生成失败，请重试"];
+                }
+                
+                // 清理和格式化每个响应
+                responses = responses.map(resp => {
+                    let clean = resp.replace(/[*_~`]/g, '').trim();
+                    // 如果太长，截断
+                    return clean.length > 25 ? clean.substring(0, 25) : clean;
+                });
+                
+                // 删除重复项
+                responses = [...new Set(responses)];
+                
+                // 最多显示10个
+                responses = responses.slice(0, 10);
+                
+                // 先填充第一个回复到输入框
+                if (responses.length > 0) {
+                    meme2Input.value = responses[0];
+                    meme2Text.textContent = responses[0];
+                    meme2Counter.textContent = responses[0].length;
+                    adjustFontSize(meme2Text, responses[0], 'meme2');
+                }
+                
+                // 填充下拉框选项
+                const dropdown = document.getElementById('aiResponsesDropdown');
+                dropdown.innerHTML = '<div class="ai-dropdown-header">选择一个神回复</div>';
+                
+                responses.forEach((resp, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'ai-dropdown-item';
+                    item.textContent = resp;
+                    item.addEventListener('click', function(e) {
+                        // 阻止事件冒泡，防止触发document的点击事件
+                        e.stopPropagation();
+                        
+                        // 选中时更新输入框和表情包
+                        meme2Input.value = resp;
+                        meme2Text.textContent = resp;
+                        meme2Counter.textContent = resp.length;
+                        adjustFontSize(meme2Text, resp, 'meme2');
+                        
+                        // 隐藏下拉框
+                        aiResponsesDropdown.style.display = 'none';
+                        // 更新下拉按钮图标
+                        toggleDropdown.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    });
+                    dropdown.appendChild(item);
+                });
+                
+                // 不自动显示下拉框，让用户点击下拉按钮时才显示
+                // dropdown.style.display = 'block';
+                
+                // 通知用户AI回复已生成
+                toggleDropdown.classList.add('animate-pulse');
+                setTimeout(() => {
+                    toggleDropdown.classList.remove('animate-pulse');
+                    // 移除这里的重置状态调用，因为已经移到input事件中了
+                }, 2000);
+                
+            } catch (error) {
+                console.error("调用DeepSeek API出错:", error);
+                
+                // 特殊处理CORS错误
+                let errorMessage = error.message;
+                if (errorMessage.includes('CORS') || errorMessage.includes('跨域') || 
+                    errorMessage.includes('Failed to fetch') || errorMessage.includes('Network Error')) {
+                    errorMessage = '跨域请求被阻止，请确保您的网络环境允许访问DeepSeek API';
+                }
+                
+                alert(`调用DeepSeek API失败: ${errorMessage}`);
+                meme2Input.value = "AI生成失败，请重试";
+                meme2Text.textContent = "AI生成失败，请重试";
+                meme2Counter.textContent = "AI生成失败，请重试".length;
+                
+                // 错误情况下立即重置状态
+                resetButtonState();
+            } finally {
+                // 清除超时保护
+                clearTimeout(resetTimeout);
+                // 移除这里的重置状态调用，因为已经移到动画完成后了
+                // resetButtonState();
+            }
+        });
+        
+        // 输入框获取焦点时显示下拉框（如果有内容）- 注释掉这段，防止自动显示下拉框
+        /*
+        meme2Input.addEventListener('focus', () => {
+            const dropdown = document.getElementById('aiResponsesDropdown');
+            if (dropdown.children.length > 1) { // 有选项时才显示
+                dropdown.style.display = 'block';
+            }
+        });
+        */
+        
+        // 单独的函数用于重置按钮状态，确保可靠性
+        function resetButtonState() {
+            aiButtonText.style.display = 'inline';
+            aiLoadingSpinner.style.display = 'none';
+            aiLoadingSpinner.classList.add('hidden');
+            getAIResponse.disabled = false;
+        }
+
+        // Enhanced font size adjustment function with auto line breaks
+        function adjustFontSize(element, text, memeType, skipAutoLineBreaks = false) {
+            // Get element width
+            const elementWidth = parseFloat(element.style.width || '45');
+            
+            // Default base font size
+            const baseFontSize = 16;
+            
+            // Set minimum font size
+            const MIN_FONT_SIZE = 12;
+            let fontSize = baseFontSize;
+            
+            // Get the current text content with any line breaks
+            const currentText = element.textContent;
+            const lines = currentText.split('\n');
+            
+            // Find the longest line
+            let maxLineLength = 0;
+            for (const line of lines) {
+                if (line.length > maxLineLength) {
+                    maxLineLength = line.length;
+                }
+            }
+            
+            // Calculate the available width for text in pixels
+            // Element width is a percentage, convert to pixels of container width
+            const container = element.parentElement;
+            const containerWidth = container.clientWidth;
+            const availableWidthPx = (containerWidth * elementWidth / 100) * 0.9; // 90% of available width
+            
+            // Determine optimal font size for longest line to fit width
+            // We'll use a rough approximation: Chinese characters are roughly square
+            // Adjust font size to fit all characters in the available width
+            if (maxLineLength > 0) {
+                // Calculate available width per character
+                const widthPerChar = availableWidthPx / maxLineLength;
+                // Font size that would make characters fit exactly (width-wise)
+                const calculatedSize = widthPerChar * 0.95; // 95% to allow some margin
+                
+                fontSize = calculatedSize;
+                
+                // Ensure we don't go below minimum font size
+                fontSize = Math.max(MIN_FONT_SIZE, fontSize);
+                
+                // For very short lines, cap the maximum font size
+                if (maxLineLength <= 3) {
+                    fontSize = Math.min(fontSize, baseFontSize * 1.8);
+                } else if (maxLineLength <= 5) {
+                    fontSize = Math.min(fontSize, baseFontSize * 1.5);
+                }
+            }
+            
+            // Apply the calculated font size
+            element.style.fontSize = `${fontSize}px`;
+            
+            // 确保文本不会被截断
+            element.style.whiteSpace = 'pre-wrap';
+            element.style.overflow = 'visible';
+            element.style.textOverflow = 'clip';
+            element.style.wordBreak = 'break-word';
+            
+            // Apply automatic line breaks for longer text if not skipped
+            if (!skipAutoLineBreaks && lines.length === 1 && text.length > 15) {
+                let formattedText = text;
+                
+                if (text.length > 15 && text.length <= 25) {
+                    // Insert line break around the middle
+                    const breakPoint = Math.floor(text.length / 2);
+                    formattedText = text.substring(0, breakPoint) + '\n' + text.substring(breakPoint);
+                } else if (text.length > 25) {
+                    // Insert two line breaks for very long text
+                    const firstBreak = Math.floor(text.length / 3);
+                    const secondBreak = Math.floor(text.length * 2 / 3);
+                    formattedText = text.substring(0, firstBreak) + '\n' + 
+                                  text.substring(firstBreak, secondBreak) + '\n' + 
+                                  text.substring(secondBreak);
+                }
+                
+                element.textContent = formattedText;
+            }
+            
+            // Adjust rotation angle for meme2 (book page) only if not customized
+            if (memeType === 'meme2' && !element.classList.contains('text-custom-rotation') && !element.style.transform.includes('custom')) {
+                // 移除默认角度设定，保持居中
+                element.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            }
+        }
+        
+        // Export position data
+        exportPositions.addEventListener('click', () => {
+            // Show loading indicator
+            const exportedImagesContainer = document.getElementById('exportedImagesContainer');
+            exportedImagesContainer.innerHTML = '<div class="text-center py-4"><div class="loading-spinner inline-block"></div><p class="mt-2">正在生成表情包...</p></div>';
+            exportedImagesContainer.classList.remove('hidden');
+            
+            // Use setTimeout to allow UI to update before heavy processing
+            setTimeout(() => {
+                // 导出前准备 - 保存原始状态
+                const meme1OriginalStyle = {
+                    overflow: meme1Text.style.overflow,
+                    maxHeight: meme1Text.style.maxHeight,
+                    zIndex: meme1Text.style.zIndex
+                };
+                
+                const meme2OriginalStyle = {
+                    overflow: meme2Text.style.overflow,
+                    maxHeight: meme2Text.style.maxHeight,
+                    zIndex: meme2Text.style.zIndex
+                };
+                
+                // 临时修改样式以确保导出正确
+                meme1Text.style.overflow = 'visible';
+                meme1Text.style.maxHeight = 'none';
+                meme1Text.style.zIndex = '10';
+                
+                meme2Text.style.overflow = 'visible';
+                meme2Text.style.maxHeight = 'none';
+                meme2Text.style.zIndex = '10';
+                
+                // 临时隐藏复制按钮
+                const copyBtn1 = document.getElementById('copyMeme1');
+                const copyBtn2 = document.getElementById('copyMeme2');
+                const copyBtn1Display = copyBtn1.style.display;
+                const copyBtn2Display = copyBtn2.style.display;
+                copyBtn1.style.display = 'none';
+                copyBtn2.style.display = 'none';
+                
+                // Export both meme images using html2canvas
+                Promise.all([
+                    html2canvas(meme1Container, {
+                        allowTaint: true,
+                        useCORS: true,
+                        scale: 2,
+                        logging: false,
+                        onclone: function(clonedDoc) {
+                            // 确保克隆文档中的文本元素样式正确
+                            const clonedText = clonedDoc.getElementById('meme1Text');
+                            if (clonedText) {
+                                clonedText.style.opacity = '1';
+                                clonedText.style.visibility = 'visible';
+                                clonedText.style.overflow = 'visible';
+                                clonedText.style.maxHeight = 'none';
+                                
+                                // 解析当前transform值并调整位置
+                                const currentTransform = clonedText.style.transform;
+                                if (currentTransform && currentTransform.includes('translate')) {
+                                    // 调整Y轴方向偏移，减少10%的下移量
+                                    clonedText.style.transform = currentTransform.replace(
+                                        /translate\(-50%, -50%\)/,
+                                        'translate(-50%, -60%)'
+                                    );
+                                }
+                            }
+                        }
+                    }),
+                    html2canvas(meme2Container, {
+                        allowTaint: true,
+                        useCORS: true,
+                        scale: 2,
+                        logging: false,
+                        onclone: function(clonedDoc) {
+                            // 确保克隆文档中的文本元素样式正确
+                            const clonedText = clonedDoc.getElementById('meme2Text');
+                            if (clonedText) {
+                                clonedText.style.opacity = '1';
+                                clonedText.style.visibility = 'visible';
+                                clonedText.style.overflow = 'visible';
+                                clonedText.style.maxHeight = 'none';
+                                
+                                // 解析当前transform值并调整位置
+                                const currentTransform = clonedText.style.transform;
+                                if (currentTransform && currentTransform.includes('translate')) {
+                                    // 调整Y轴方向偏移，减少10%的下移量
+                                    clonedText.style.transform = currentTransform.replace(
+                                        /translate\(-50%, -50%\)/,
+                                        'translate(-50%, -60%)'
+                                    );
+                                }
+                            }
+                        }
+                    })
+                ]).then(([canvas1, canvas2]) => {
+                    // 恢复原始样式
+                    meme1Text.style.overflow = meme1OriginalStyle.overflow;
+                    meme1Text.style.maxHeight = meme1OriginalStyle.maxHeight;
+                    meme1Text.style.zIndex = meme1OriginalStyle.zIndex;
+                    
+                    meme2Text.style.overflow = meme2OriginalStyle.overflow;
+                    meme2Text.style.maxHeight = meme2OriginalStyle.maxHeight;
+                    meme2Text.style.zIndex = meme2OriginalStyle.zIndex;
+                    
+                    // 恢复复制按钮
+                    copyBtn1.style.display = copyBtn1Display;
+                    copyBtn2.style.display = copyBtn2Display;
+                    
+                    // 自动下载图片1
+                    downloadCanvas(canvas1, '表情包1.png');
+                    
+                    // 短暂延迟后下载图片2，避免浏览器阻止多次下载
+                    setTimeout(() => {
+                        downloadCanvas(canvas2, '表情包2.png');
+                        
+                        // 更新提示信息
+                        exportedImagesContainer.innerHTML = '<p class="text-center text-green-500">表情包已成功下载！</p>';
+                        
+                        // 3秒后隐藏提示
+                        setTimeout(() => {
+                            exportedImagesContainer.classList.add('hidden');
+                        }, 3000);
+                    }, 500);
+                }).catch(error => {
+                    console.error('导出图片时出错:', error);
+                    exportedImagesContainer.innerHTML = '<p class="text-center text-red-500">导出图片时出错，请重试</p>';
+                    
+                    // 恢复原始样式
+                    meme1Text.style.overflow = meme1OriginalStyle.overflow;
+                    meme1Text.style.maxHeight = meme1OriginalStyle.maxHeight;
+                    meme1Text.style.zIndex = meme1OriginalStyle.zIndex;
+                    
+                    meme2Text.style.overflow = meme2OriginalStyle.overflow;
+                    meme2Text.style.maxHeight = meme2OriginalStyle.maxHeight;
+                    meme2Text.style.zIndex = meme2OriginalStyle.zIndex;
+                    
+                    // 恢复复制按钮
+                    copyBtn1.style.display = copyBtn1Display;
+                    copyBtn2.style.display = copyBtn2Display;
+                });
+            }, 100);
+        });
+        
+        // 辅助函数：下载Canvas为图片
+        function downloadCanvas(canvas, filename) {
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Area customization for Meme 1
+        customizeMeme1Area.addEventListener('click', () => {
+            if (customAreaActive) return; // Prevent multiple customizations at once
+            startCustomization(meme1Container, meme1Text, 'meme1');
+        });
+        
+        // Area customization for Meme 2
+        customizeMeme2Area.addEventListener('click', () => {
+            if (customAreaActive) return; // Prevent multiple customizations at once
+            startCustomization(meme2Container, meme2Text, 'meme2');
+        });
+        
+        // Start customization mode
+        function startCustomization(container, textElement, memeType) {
+            // Set global variables
+            currentCustomizing = memeType;
+            customizingElement = textElement;
+            customAreaActive = true;
+            
+            // Add customization class to container
+            container.classList.add('customize-mode');
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'area-overlay';
+            container.appendChild(overlay);
+            
+            // Create finish and cancel buttons
+            const finishBtn = document.createElement('button');
+            finishBtn.className = 'finish-btn';
+            finishBtn.textContent = '完成';
+            finishBtn.addEventListener('click', finishCustomization);
+            container.appendChild(finishBtn);
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-btn';
+            cancelBtn.textContent = '取消';
+            cancelBtn.addEventListener('click', cancelCustomization);
+            container.appendChild(cancelBtn);
+            
+            // Instruction overlay
+            const instruction = document.createElement('div');
+            instruction.className = 'absolute top-2 left-0 right-0 text-center text-white text-sm font-bold px-2 py-1 bg-pink-500 bg-opacity-70 rounded-lg z-20';
+            instruction.textContent = '点击4个点确定区域（上方2点决定文字方向）';
+            container.appendChild(instruction);
+            
+            // Setup click event for selecting points
+            overlay.addEventListener('click', handleAreaClick);
+
+            // If we have last positions for this meme, restore them
+            const lastPositions = memeType === 'meme1' ? lastMeme1Positions : lastMeme2Positions;
+            if (lastPositions) {
+                // Restore each point
+                lastPositions.forEach(pos => {
+                    const fakeEvent = {
+                        clientX: pos.x + container.getBoundingClientRect().left,
+                        clientY: pos.y + container.getBoundingClientRect().top,
+                        target: overlay,
+                        currentTarget: overlay
+                    };
+                    handleAreaClick(fakeEvent);
+                });
+            }
+        }
+        
+        // Handle clicks to define the area
+        function handleAreaClick(e) {
+            // Limit to 4 points
+            if (currentMarkers.length >= 4) return;
+            
+            const container = e.currentTarget.parentElement;
+            const rect = container.getBoundingClientRect();
+            
+            // Calculate position relative to container
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Create marker at click position
+            const marker = document.createElement('div');
+            marker.className = 'text-area-marker';
+            marker.style.left = `${x}px`;
+            marker.style.top = `${y}px`;
+            marker.dataset.index = currentMarkers.length;
+            
+            // Add draggable functionality
+            marker.addEventListener('mousedown', startDragMarker);
+            marker.addEventListener('touchstart', startDragMarker, { passive: false });
+            
+            container.appendChild(marker);
+            currentMarkers.push({ marker, x, y });
+            
+            // Draw lines between markers
+            if (currentMarkers.length > 1) {
+                drawLineBetweenMarkers(
+                    container, 
+                    currentMarkers[currentMarkers.length - 2], 
+                    currentMarkers[currentMarkers.length - 1]
+                );
+            }
+            
+            // If we have 4 markers, connect the last one to the first one
+            if (currentMarkers.length === 4) {
+                drawLineBetweenMarkers(container, currentMarkers[3], currentMarkers[0]);
+            }
+        }
+        
+        // Draw line between two markers
+        function drawLineBetweenMarkers(container, markerA, markerB) {
+            const line = document.createElement('div');
+            line.className = 'text-area-line';
+            
+            // Calculate line length and angle
+            const dx = markerB.x - markerA.x;
+            const dy = markerB.y - markerA.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Set line style
+            line.style.width = `${length}px`;
+            line.style.height = '2px';
+            line.style.left = `${markerA.x}px`;
+            line.style.top = `${markerA.y}px`;
+            line.style.transformOrigin = '0 0';
+            line.style.transform = `rotate(${angle}deg)`;
+            
+            container.appendChild(line);
+            currentLines.push(line);
+        }
+        
+        // Start dragging a marker
+        function startDragMarker(e) {
+            e.preventDefault();
+            const marker = e.target;
+            const container = marker.parentElement;
+            const rect = container.getBoundingClientRect();
+            const index = parseInt(marker.dataset.index);
+            
+            // Set marker being dragged
+            let isDragging = true;
+            
+            // Move marker on mouse/touch move
+            const moveMarker = (moveEvent) => {
+                if (!isDragging) return;
+                
+                let clientX, clientY;
+                if (moveEvent.type === 'mousemove') {
+                    clientX = moveEvent.clientX;
+                    clientY = moveEvent.clientY;
+                } else {
+                    // Touch event
+                    clientX = moveEvent.touches[0].clientX;
+                    clientY = moveEvent.touches[0].clientY;
+                }
+                
+                // Calculate position relative to container
+                const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+                const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+                
+                // Update marker position
+                marker.style.left = `${x}px`;
+                marker.style.top = `${y}px`;
+                
+                // Update stored coordinates
+                currentMarkers[index].x = x;
+                currentMarkers[index].y = y;
+                
+                // Update connected lines
+                updateLines();
+
+                // Update text position in real-time if we have all 4 points
+                if (currentMarkers.length === 4) {
+                    updateTextPosition();
+                }
+            };
+            
+            // Stop dragging on mouse/touch up
+            const stopDrag = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', moveMarker);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', moveMarker);
+                document.removeEventListener('touchend', stopDrag);
+            };
+            
+            // Add listeners for drag actions
+            document.addEventListener('mousemove', moveMarker);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', moveMarker, { passive: false });
+            document.addEventListener('touchend', stopDrag);
+        }
+        
+        // Function to update text position based on current markers
+        function updateTextPosition() {
+            if (currentMarkers.length < 4 || !customizingElement) return;
+
+            const container = currentMarkers[0].marker.parentElement;
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Calculate center of the four points
+            let centerX = 0, centerY = 0;
+            currentMarkers.forEach(marker => {
+                centerX += marker.x;
+                centerY += marker.y;
+            });
+            centerX /= 4;
+            centerY /= 4;
+            
+            // Calculate width and angle using the first two points
+            const dx = currentMarkers[1].x - currentMarkers[0].x;
+            const dy = currentMarkers[1].y - currentMarkers[0].y;
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Calculate the line length between first two points
+            const lineLength = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate relative positions (as percentages)
+            const relCenterX = (centerX / containerWidth) * 100;
+            const relCenterY = (centerY / containerHeight) * 100;
+            const relWidth = (lineLength / containerWidth) * 100; // 移除乘以2，使用实际选定的宽度
+            
+            // Apply the new positioning to the text element
+            customizingElement.style.top = `${relCenterY}%`;
+            customizingElement.style.left = `${relCenterX}%`;
+            customizingElement.style.width = `${relWidth}%`;
+            customizingElement.style.transformOrigin = 'center center';
+            customizingElement.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+            
+            // 获取文本内容和行数
+            const text = customizingElement.textContent;
+            const lines = text.split('\n');
+            const maxLineLength = Math.max(...lines.map(line => line.length));
+            
+            // 计算每个字符的理想宽度（考虑到中文字符）
+            const charWidth = lineLength / maxLineLength;
+            
+            // 根据字符宽度计算字体大小，考虑到中文字符的宽高比接近1:1
+            const optimalFontSize = Math.min(
+                charWidth * 0.95, // 字符宽度稍微收缩以留出间距
+                lineLength / (maxLineLength + 1) // 确保最长行能完整显示
+            );
+            
+            // 设置最小和最大字体大小限制
+            const fontSize = Math.max(12, Math.min(28, optimalFontSize));
+            customizingElement.style.fontSize = `${fontSize}px`;
+            customizingElement.style.lineHeight = '1.3';
+            
+            // 修改文字溢出处理
+            customizingElement.style.whiteSpace = 'pre-wrap'; // 改为pre-wrap允许自动换行
+            customizingElement.style.overflow = 'hidden'; // 改为hidden防止文字溢出区域
+            customizingElement.style.textOverflow = 'ellipsis'; // 使用省略号表示溢出
+            customizingElement.style.wordBreak = 'break-word'; // 允许在任何字符间换行
+            customizingElement.style.maxHeight = `${lineLength * 1.5}px`; // 添加最大高度限制
+        }
+        
+        // Update all lines when markers move
+        function updateLines() {
+            // Remove all current lines
+            currentLines.forEach(line => line.remove());
+            currentLines = [];
+            
+            // Redraw all lines
+            const container = currentMarkers[0].marker.parentElement;
+            
+            for (let i = 0; i < currentMarkers.length; i++) {
+                const next = (i + 1) % currentMarkers.length;
+                // Only draw the final closing line if we have all 4 points
+                if (next !== 0 || currentMarkers.length === 4) {
+                    drawLineBetweenMarkers(container, currentMarkers[i], currentMarkers[next]);
+                }
+            }
+        }
+        
+        // Finish customization and apply the new area
+        function finishCustomization() {
+            // Need all 4 points to define an area
+            if (currentMarkers.length < 4) {
+                alert('请标记4个点来定义文字区域');
+                return;
+            }
+
+            // Store current positions before applying changes
+            const positions = currentMarkers.map(marker => ({
+                x: marker.x,
+                y: marker.y
+            }));
+            
+            // Save positions based on meme type
+            if (currentCustomizing === 'meme1') {
+                lastMeme1Positions = positions;
+            } else {
+                lastMeme2Positions = positions;
+            }
+
+            // Update text position one last time
+            updateTextPosition();
+
+            // Add custom rotation class
+            customizingElement.classList.add('text-custom-rotation');
+
+            // Store original text
+            const originalText = customizingElement.textContent;
+            
+            // Calculate line length for text formatting
+            const dx = currentMarkers[1].x - currentMarkers[0].x;
+            const dy = currentMarkers[1].y - currentMarkers[0].y;
+            const lineLength = Math.sqrt(dx * dx + dy * dy);
+            const fontSize = Math.max(12, Math.min(24, lineLength / 8));
+            
+            // Format text based on available space
+            let formattedText = originalText;
+            const textLength = originalText.length;
+            
+            // 调整文本自动换行策略
+            if (textLength > 8) {
+                // 计算基于当前宽度的合理每行字符数
+                const charsPerLine = Math.max(4, Math.floor(lineLength / (fontSize * 0.8)));
+                
+                // 如果文本长度超过每行字符数，进行自动换行处理
+                if (textLength > charsPerLine) {
+                    formattedText = '';
+                    
+                    // 先检查文本中是否已有换行符
+                    const existingLines = originalText.split('\n');
+                    
+                    if (existingLines.length > 1) {
+                        // 保留原有换行，但每行内容过长时还是要增加换行
+                        for (let line of existingLines) {
+                            if (line.length <= charsPerLine) {
+                                formattedText += (formattedText ? '\n' : '') + line;
+                            } else {
+                                // 长行进行再次分割
+                                for (let i = 0; i < line.length; i += charsPerLine) {
+                                    if (i > 0 || formattedText) formattedText += '\n';
+                                    formattedText += line.substring(i, Math.min(i + charsPerLine, line.length));
+                                }
+                            }
+                        }
+                    } else {
+                        // 无现有换行时，按长度均匀分割
+                        for (let i = 0; i < textLength; i += charsPerLine) {
+                            if (i > 0) formattedText += '\n';
+                            formattedText += originalText.substring(i, Math.min(i + charsPerLine, textLength));
+                        }
+                    }
+                }
+            }
+            
+            // Apply the formatted text
+            customizingElement.textContent = formattedText;
+            
+            // 确保完成后文字区域内容可见且不溢出
+            customizingElement.style.overflow = 'visible';
+            customizingElement.style.maxHeight = 'none';
+            customizingElement.style.visibility = 'visible';
+            customizingElement.style.opacity = '1';
+            
+            // Cleanup and exit customization mode
+            cleanupCustomizationMode();
+        }
+        
+        // Cancel customization
+        function cancelCustomization() {
+            cleanupCustomizationMode();
+        }
+        
+        // Clean up after customization is finished or canceled
+        function cleanupCustomizationMode() {
+            const container = currentMarkers.length > 0 
+                ? currentMarkers[0].marker.parentElement 
+                : (currentCustomizing === 'meme1' ? meme1Container : meme2Container);
+            
+            // Remove all markers and lines
+            currentMarkers.forEach(marker => marker.marker.remove());
+            currentLines.forEach(line => line.remove());
+            
+            // Remove overlay and buttons
+            container.querySelectorAll('.area-overlay, .finish-btn, .cancel-btn').forEach(el => el.remove());
+            container.querySelector('.absolute.top-2')?.remove(); // Remove instruction
+            
+            // Remove customization class
+            container.classList.remove('customize-mode');
+            
+            // Show text element again
+            customizingElement.style.visibility = 'visible';
+            
+            // Reset variables
+            currentMarkers = [];
+            currentLines = [];
+            currentCustomizing = null;
+            customizingElement = null;
+            customAreaActive = false;
+        }
+        
+        // Initialize
+        updateTextColors();
+        adjustFontSize(meme1Text, meme1Input.value, 'meme1');
+        adjustFontSize(meme2Text, meme2Input.value, 'meme2');
+        
+        // 确保加载动画初始状态正确
+        aiButtonText.style.display = 'inline';
+        aiLoadingSpinner.style.display = 'none';
+        aiLoadingSpinner.classList.add('hidden');
+        getAIResponse.disabled = false;
+        
+        // 复制表情包到剪贴板功能
+        const copyMeme1 = document.getElementById('copyMeme1');
+        const copyMeme2 = document.getElementById('copyMeme2');
+        
+        copyMeme1.addEventListener('click', () => {
+            copyMemeToClipboard(meme1Container, copyMeme1);
+        });
+        
+        copyMeme2.addEventListener('click', () => {
+            copyMemeToClipboard(meme2Container, copyMeme2);
+        });
+        
+        // 复制表情包到剪贴板的函数
+        function copyMemeToClipboard(container, button) {
+            // 保存按钮原始文本
+            const originalText = button.innerHTML;
+            
+            // 更改按钮文本显示为加载状态
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 复制中...';
+            
+            // 获取文本元素
+            const textElement = container.querySelector('.meme-text');
+            
+            // 保存原始样式
+            const originalStyle = {
+                overflow: textElement.style.overflow,
+                maxHeight: textElement.style.maxHeight,
+                zIndex: textElement.style.zIndex,
+                opacity: textElement.style.opacity,
+                visibility: textElement.style.visibility
+            };
+            
+            // 临时修改样式以确保导出正确
+            textElement.style.overflow = 'visible';
+            textElement.style.maxHeight = 'none';
+            textElement.style.zIndex = '10';
+            textElement.style.opacity = '1';
+            textElement.style.visibility = 'visible';
+            
+            // 隐藏复制按钮
+            button.style.display = 'none';
+            
+            // 使用html2canvas将表情包转换为canvas
+            html2canvas(container, {
+                allowTaint: true,
+                useCORS: true,
+                scale: 2,
+                logging: false,
+                onclone: function(clonedDoc) {
+                    // 找到克隆文档中对应的文本元素
+                    const clonedContainer = Array.from(clonedDoc.querySelectorAll('.meme-container')).find(
+                        el => el.innerHTML.includes(textElement.textContent)
+                    );
+                    
+                    if (clonedContainer) {
+                        const clonedText = clonedContainer.querySelector('.meme-text');
+                        if (clonedText) {
+                            clonedText.style.opacity = '1';
+                            clonedText.style.visibility = 'visible';
+                            clonedText.style.overflow = 'visible';
+                            clonedText.style.maxHeight = 'none';
+                            clonedText.style.zIndex = '10';
+                            
+                            // 解析当前transform值并调整位置
+                            const currentTransform = clonedText.style.transform;
+                            if (currentTransform && currentTransform.includes('translate')) {
+                                // 调整Y轴方向偏移，减少10%的下移量
+                                clonedText.style.transform = currentTransform.replace(
+                                    /translate\(-50%, -50%\)/,
+                                    'translate(-50%, -60%)'
+                                );
+                            }
+                        }
+                        
+                        // 隐藏克隆中的按钮
+                        const clonedButton = clonedContainer.querySelector('.copy-btn');
+                        if (clonedButton) {
+                            clonedButton.style.display = 'none';
+                        }
+                    }
+                }
+            }).then(canvas => {
+                // 恢复原始样式
+                textElement.style.overflow = originalStyle.overflow;
+                textElement.style.maxHeight = originalStyle.maxHeight;
+                textElement.style.zIndex = originalStyle.zIndex;
+                textElement.style.opacity = originalStyle.opacity;
+                textElement.style.visibility = originalStyle.visibility;
+                
+                // 恢复按钮显示
+                button.style.display = 'flex';
+                
+                // 将canvas转为Blob
+                canvas.toBlob(blob => {
+                    // 创建ClipboardItem对象
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    
+                    // 写入剪贴板
+                    navigator.clipboard.write([item]).then(() => {
+                        // 成功复制后更改按钮文本
+                        button.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                        
+                        // 2秒后恢复按钮原始文本
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('复制到剪贴板失败:', err);
+                        button.innerHTML = '<i class="fas fa-times"></i> 复制失败';
+                        
+                        // 2秒后恢复按钮原始文本
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 2000);
+                    });
+                });
+            }).catch(error => {
+                console.error('生成表情包图像失败:', error);
+                button.innerHTML = '<i class="fas fa-times"></i> 复制失败';
+                
+                // 恢复原始样式
+                textElement.style.overflow = originalStyle.overflow;
+                textElement.style.maxHeight = originalStyle.maxHeight; 
+                textElement.style.zIndex = originalStyle.zIndex;
+                textElement.style.opacity = originalStyle.opacity;
+                textElement.style.visibility = originalStyle.visibility;
+                
+                // 恢复按钮显示
+                button.style.display = 'flex';
+                
+                // 2秒后恢复按钮原始文本
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        // 配置API密钥
+        const configureApiKey = document.getElementById('configureApiKey');
+        configureApiKey.addEventListener('click', () => {
+            const apiKeyModal = document.getElementById('apiKeyModal');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const toggleApiKeyVisibility = document.getElementById('toggleApiKeyVisibility');
+            const closeApiModal = document.getElementById('closeApiModal');
+            const cancelApiKey = document.getElementById('cancelApiKey');
+            const saveApiKey = document.getElementById('saveApiKey');
+            
+            // 显示模态框
+            apiKeyModal.style.display = 'flex';
+            
+            // 如果有已保存的密钥，填充到输入框
+            apiKeyInput.value = localStorage.getItem('deepseekApiKey') || '';
+            
+            // 切换密钥可见性
+            toggleApiKeyVisibility.addEventListener('click', () => {
+                const type = apiKeyInput.type;
+                apiKeyInput.type = type === 'password' ? 'text' : 'password';
+                toggleApiKeyVisibility.innerHTML = `<i class="fas fa-eye${type === 'password' ? '' : '-slash'}"></i>`;
+            });
+            
+            // 关闭模态框的函数
+            const closeModal = () => {
+                apiKeyModal.style.display = 'none';
+            };
+            
+            // 处理ESC键关闭
+            const handleEscKey = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            };
+            
+            // 添加ESC键监听
+            document.addEventListener('keydown', handleEscKey);
+            
+            // 点击关闭按钮
+            closeApiModal.addEventListener('click', closeModal);
+            
+            // 点击取消按钮
+            cancelApiKey.addEventListener('click', closeModal);
+            
+            // 点击保存按钮
+            saveApiKey.addEventListener('click', () => {
+                const newKey = apiKeyInput.value.trim();
+                deepseekApiKey = newKey;
+                localStorage.setItem('deepseekApiKey', newKey);
+                
+                // 显示成功提示
+                const successMessage = document.createElement('div');
+                successMessage.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300';
+                successMessage.innerHTML = '<i class="fas fa-check-circle mr-2"></i>API密钥已成功保存';
+                document.body.appendChild(successMessage);
+                
+                // 3秒后移除提示
+                setTimeout(() => {
+                    successMessage.style.opacity = '0';
+                    setTimeout(() => successMessage.remove(), 300);
+                }, 3000);
+                
+                closeModal();
+            });
+            
+            // 点击模态框外部关闭
+            apiKeyModal.addEventListener('click', (e) => {
+                if (e.target === apiKeyModal) {
+                    closeModal();
+                }
+            });
+        });
+
+        // 添加下拉按钮点击事件
+        toggleDropdown.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // 阻止事件冒泡
+            
+            // 获取当前计算样式
+            const dropdownStyle = window.getComputedStyle(aiResponsesDropdown);
+            
+            // 切换下拉框显示状态
+            if (dropdownStyle.display !== 'none') {
+                aiResponsesDropdown.style.display = 'none';
+                toggleDropdown.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            } else {
+                aiResponsesDropdown.style.display = 'block';
+                toggleDropdown.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            }
+        });
+        
+        // 点击其他地方关闭下拉框
+        document.addEventListener('click', function(e) {
+            if (!toggleDropdown.contains(e.target) && !aiResponsesDropdown.contains(e.target)) {
+                aiResponsesDropdown.style.display = 'none';
+                toggleDropdown.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+        });
+    </script>
+    
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">设置 DeepSeek API 密钥</h3>
+                <button id="closeApiModal" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="apiKeyInput" class="block text-sm font-medium text-gray-700 mb-1">
+                        API 密钥
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="apiKeyInput"
+                            class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            placeholder="请输入您的 DeepSeek API 密钥"
+                        >
+                        <button id="toggleApiKeyVisibility" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-pink-50 rounded-lg p-4">
+                    <p class="text-sm text-pink-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        请输入您的 DeepSeek API 密钥以启用AI神回复功能
+                    </p>
+                </div>
+                
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button id="cancelApiKey" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                        取消
+                    </button>
+                    <button id="saveApiKey" class="px-4 py-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-colors">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
